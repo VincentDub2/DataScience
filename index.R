@@ -15,7 +15,8 @@ header <- dashboardHeader(title = "Analyse de Données")
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("ACP", tabName = "acp", icon = icon("chart-line")),
-    menuItem("ANOVA", tabName = "anova", icon = icon("balance-scale"))
+    menuItem("ANOVA", tabName = "anova", icon = icon("balance-scale")),
+    menuItem("Étude des feuilles", tabName = "feuille", icon = icon("leaf"))
   )
 )
 
@@ -50,6 +51,16 @@ body <- dashboardBody(
                 mainPanel(
                   tableOutput("resultAnova") # Utiliser tableOutput pour afficher les résultats sous forme de tableau
                 )
+              )
+            )
+    ),
+    # Troisième page : Étude des feuilles
+    tabItem(tabName = "feuille",
+            fluidPage(
+              titlePanel("Étude des feuilles"),
+              mainPanel(
+                plotOutput("plotVariability"),
+                plotOutput("plotHeritability")
               )
             )
     )
@@ -99,6 +110,33 @@ server <- function(input, output, session) {
                  gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
                  repel = TRUE
     )
+  })
+
+  output$plotVariability <- renderPlot({
+    source("Graphes/Variabilite_relative_elements.R", local = TRUE)$value
+    
+    # Charger les données nécessaires pour le graphique
+    data_for_feuille <- data.frame(
+      Element = c("Li", "Mg", "P", "S", "K", "Ca", "Mn", "Fe", "Cu", "Zn", "As", "Sr", "Cd", "Co", "Se", "Rb", "Na", "Mo"),
+      RSD = c(4.38, 8.35, 7.52, 9.60, 9.31, 5.86, 5.33, 2.33, 8.12, 7.01, 8.32, 6.38, 9.88, 23.90, 13.05, 10.75, 33.63, 71.29),
+      RSD_Category = c(rep("Faible", 13), rep("Modéré", 3), "Fort", "Fort")
+    )
+    
+    # Appeler la fonction generateGraph pour générer le graphique
+    generateGraph(data_for_feuille)
+  })
+  
+  output$plotHeritability <- renderPlot({
+    source("Graphes/Heritabilite_elements.R", local = TRUE)$value
+    
+    # Données d'héritabilité
+    heritability_data <- data.frame(
+      Element = c("Li", "Na", "Mg", "P", "S", "K", "Ca", "Mn", "Fe", "Co", "Cu", "Zn", "As", "Se", "Rb", "Sr", "Mo", "Cd"),
+      Heritability = c(16.58, 52.89, 26.49, 28.67, 21.17, 43.54, 25.47, 5.48, 10.49, 29.38, 16.68, 4.32, 9.98, 39.87, 28.39, 28.34, 77.14, 4.95)
+    )
+    
+    # Appeler la fonction generateGraph pour générer le graphique
+    generateGraph(heritability_data)
   })
 
   output$checkbox_elements <- renderUI({

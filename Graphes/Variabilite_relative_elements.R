@@ -2,7 +2,7 @@ generateGraph <- function(data) {
   library(ggplot2)
   
   # Définir les couleurs pour chaque catégorie de RSD
-  colors <- c("Faible" = "yellow", "Modéré" = "orange", "Fort" = "red")
+  colors <- c("Faible" = "#00AFBB", "Modéré" = "#E7B800", "Fort" = "#FC4E07")
   
   # Créer le graphique à barres
   ggplot(data, aes(x = Element, y = RSD, fill = RSD_Category)) +
