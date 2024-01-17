@@ -5,19 +5,25 @@ BiocManager::install("GWASTools")
 BiocManager::install("SNPRelate")
 BiocManager::install("gdsfmt")
 
+
 # Load necessary libraries
 library(SNPRelate)
 library(GWASTools)
 library(data.table)
 library(qqman)
 
+
 # Assurez-vous que les chemins des fichiers sont correctement définis pour votre environnement
 genotype_filepath <- "X.csv"
-phenotype_filepath <- "Leaf_with_ID/As75.txt"
+phenotype_filepath <- "leaf_data.csv"
 
 # Step 1: Create a GDS file from your genotype data
 # Assuming your genotype data is in a CSV file and formatted correctly
 genotype_data <- fread(genotype_filepath)
+phenotype_data <- fread(phenotype_filepath)
+
+head(phenotype_data[, 1:10])
+head(genotype_data[, 1:10])
 setnames(genotype_data, old = names(genotype_data)[1], new = "ecotype_id")
 
 genotype_matrix <- as.matrix(genotype_data[, 3:ncol(genotype_data)])

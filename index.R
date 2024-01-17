@@ -3,6 +3,7 @@ library(shinydashboard)
 library(FactoMineR)
 library(factoextra)
 library(ggplot2)
+library(reticulate)
 
 # Chemins des fichiers sur le serveur
 chemin_fichier_feuilles <- "seed_data.csv"
