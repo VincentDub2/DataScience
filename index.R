@@ -3,7 +3,7 @@ library(shinydashboard)
 library(FactoMineR)
 library(factoextra)
 library(ggplot2)
-library(reticulate)
+library(cluster)
 
 # Chemins des fichiers sur le serveur
 chemin_fichier_feuilles <- "seed_data.csv"
@@ -15,7 +15,8 @@ header <- dashboardHeader(title = "Analyse de Données")
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("ACP", tabName = "acp", icon = icon("chart-line")),
-    menuItem("ANOVA", tabName = "anova", icon = icon("balance-scale"))
+    menuItem("ANOVA", tabName = "anova", icon = icon("balance-scale")),
+    menuItem("K-means Clustering", tabName = "kmeans", icon = icon("chart-pie"))
   )
 )
 
@@ -52,6 +53,28 @@ body <- dashboardBody(
                 )
               )
             )
+    ),
+    # Troisième page : K-means Clustering
+    tabItem(tabName = "kmeans",
+            fluidPage(
+              titlePanel("K-means Clustering"),
+              sidebarLayout(
+                sidebarPanel(
+                  selectInput("choix_fichier_kmeans", "Choisissez un type de fichier:",
+                              choices = c("Feuilles" = chemin_fichier_feuilles, "Graines" = chemin_fichier_graines)),
+                  numericInput("clusters", "Nombre de clusters:", min = 2, value = 3),
+                  actionButton("btn", "Calculer")
+                ),
+                mainPanel(
+                  plotOutput("plotKmeans"),
+                  plotOutput("plotKmeansPCA"),
+                  plotOutput("plotElbow"),
+                  plotOutput("plotSilhouette"),
+                  plotOutput("plotGap")
+                )
+              )
+            )
+
     )
   )
 )
@@ -126,7 +149,7 @@ server <- function(input, output, session) {
     }))
   })
 
-    # Effectuer une ANOVA pour chaque élément sélectionné et renvoyer les résultats
+  # Effectuer une ANOVA pour chaque élément sélectionné et renvoyer les résultats
 
   output$resultAnova <- renderTable({
     req(results()) # S'assurer que les résultats de l'ANOVA sont disponibles
@@ -157,6 +180,95 @@ server <- function(input, output, session) {
       }
     }))
   })
+
+  # K-means Clustering
+  # Fonction réactive pour lire les données sélectionnées
+
+  # Fonction réactive pour lire les données sélectionnées
+  reactiveData <- reactive({
+    req(input$choix_fichier_kmeans)
+    inFile <- input$choix_fichier_kmeans
+    if (is.null(inFile))
+      return(NULL)
+    read.csv(inFile, header = TRUE, stringsAsFactors = FALSE)
+  })
+
+  results_kmeans_pca <- eventReactive(input$btn, {
+    req(reactiveData())
+    donnees <- reactiveData()
+    donnees_normalisees <- scale(donnees[, sapply(donnees, is.numeric)])
+    set.seed(123)
+    kmeans_result <- kmeans(donnees_normalisees, centers = input$clusters, nstart = 20, iter.max = 50)
+
+    # Ajouter la colonne de cluster aux données normalisées
+    donnees_normalisees <- as.data.frame(donnees_normalisees)
+    donnees_normalisees$cluster <- as.factor(kmeans_result$cluster)
+
+    # Exécuter l'analyse PCA
+    donnees_pour_pca <- donnees_normalisees[, !colnames(donnees_normalisees) %in% c("cluster")]
+    resultat_pca <- PCA(donnees_pour_pca, graph = FALSE)
+
+    list(resultat_pca = resultat_pca, donnees_normalisees = donnees_normalisees, kmeans_result = kmeans_result)
+  })
+
+  observeEvent(input$btn, {
+    # Assurez-vous que des données ont été chargées
+    req(reactiveData())
+
+    # Effectuer le clustering K-means
+    donnees <- reactiveData()
+    donnees_normalisees <- scale(donnees[, sapply(donnees, is.numeric)])
+    set.seed(123)
+    kmeans_result <- kmeans(donnees_normalisees, centers = input$clusters, nstart = 20, iter.max = 50)
+
+    # Stocker les résultats pour un usage futur
+    output$plotKmeans <- renderPlot({
+      fviz_cluster(kmeans_result, data = donnees_normalisees)
+    })
+
+    output$plotKmeansPCA <- renderPlot({
+      results <- results_kmeans_pca()
+      req(results)
+      fviz_pca_biplot(results$resultat_pca, label = "var",
+                      col.ind = results$donnees_normalisees$cluster,
+                      addEllipses = TRUE, ellipse.level = 0.95)
+    })
+
+    # Calculer et tracer la méthode du coude
+    wcss <- sapply(1:10, function(k) {
+      kmeans(donnees_normalisees, centers = k, nstart = 20)$tot.withinss
+    })
+    output$plotElbow <- renderPlot({
+      plot(1:10, wcss, type = "b", xlab = "Nombre de Clusters", ylab = "WCSS")
+    })
+
+    # Calculer et tracer les scores de silhouette
+    output$plotSilhouette <- renderPlot({
+      req(reactiveData())
+      donnees <- reactiveData()
+      donnees_normalisees <- scale(donnees[, sapply(donnees, is.numeric)])
+      silhouette_scores <- numeric(9)
+
+      for (k in 2:10) {
+        kmeans_result <- kmeans(donnees_normalisees, centers = k, nstart = 20)
+        sil_score <- silhouette(kmeans_result$cluster, dist(donnees_normalisees))
+        silhouette_scores[k - 1] <- mean(sil_score[, 3])
+      }
+      str(silhouette_scores)
+      plot(2:10, silhouette_scores, type = "b", xlab = "Nombre de Clusters", ylab = "Score de Silhouette Moyen")
+    })
+  })
+  # Calculer et tracer l'analyse des gaps
+  output$plotGap <- renderPlot({
+    req(reactiveData())
+    donnees <- reactiveData()
+    donnees_normalisees <- scale(donnees[, sapply(donnees, is.numeric)])
+    gap_stat <- clusGap(donnees_normalisees, FUN = kmeans, nstart = 20, K.max = 10, B = 50)
+    plot(gap_stat, main = "Gap Statistic")
+  })
+
+
+  # Fin K-means Clustering
 }
 
-  shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server)
