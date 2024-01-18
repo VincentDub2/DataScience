@@ -58,10 +58,16 @@ body <- dashboardBody(
     tabItem(tabName = "feuille",
             fluidPage(
               titlePanel("Étude des feuilles"),
-              mainPanel(
-                plotOutput("plotVariability"),
-                plotOutput("plotHeritability"),
-                plotOutput("plotCorrelation")
+              fluidRow(
+                div(style = "margin-top: 20px;",
+                    plotOutput("plotVariability"),
+                ),
+                div(style = "margin-top: 50px;",
+                    plotOutput("plotHeritability"),
+                ),
+                div(style = "margin-top: 50px;",
+                    plotOutput("plotCorrelation"),
+                )
               )
             )
     )
