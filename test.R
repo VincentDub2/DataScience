@@ -14,7 +14,7 @@ library(qqman)
 
 
 # Assurez-vous que les chemins des fichiers sont correctement définis pour votre environnement
-genotype_filepath <- "X.csv"
+genotype_filepath <- "resultats_chromosomes/chromosome_1.csv"
 phenotype_filepath <- "leaf_data.csv"
 
 # Step 1: Create a GDS file from your genotype data
