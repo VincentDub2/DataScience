@@ -13,7 +13,7 @@ generateGraph <- function(heritability_data) {
     geom_bar(stat = "identity") +
     scale_fill_manual(values = colors) +
     theme_minimal() +
-    labs(title = "Héritabilité des éléments dans les racines d'Arabidopsis thaliana",
+    labs(title = "Héritabilité des éléments dans les graines d'Arabidopsis thaliana",
          x = "Élément",
          y = "Héritabilité (%)",
          fill = "Niveau d'héritabilité") +

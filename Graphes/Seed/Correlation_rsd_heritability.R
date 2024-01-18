@@ -7,6 +7,6 @@ generateGraph <- function(data) {
     geom_text(vjust = 1.5, hjust = 1.5) +
     xlab("Variabilité Relative des Éléments (RSD %)") +
     ylab("Héritabilité (%)") +
-    ggtitle("Corrélation entre RSD et Héritabilité des minéraux dans les racines chez Arabidopsis thaliana") +
+    ggtitle("Corrélation entre RSD et Héritabilité des minéraux dans les graines chez Arabidopsis thaliana") +
     theme_minimal()
 }
