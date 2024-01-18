@@ -60,7 +60,8 @@ body <- dashboardBody(
               titlePanel("Étude des feuilles"),
               mainPanel(
                 plotOutput("plotVariability"),
-                plotOutput("plotHeritability")
+                plotOutput("plotHeritability"),
+                plotOutput("plotCorrelation")
               )
             )
     )
@@ -137,6 +138,19 @@ server <- function(input, output, session) {
     
     # Appeler la fonction generateGraph pour générer le graphique
     generateGraph(heritability_data)
+  })
+  
+  output$plotCorrelation <- renderPlot({
+    source("Graphes/Correlation_rsd_heritability.R", local = TRUE)$value
+    
+    correlation_data <- data.frame(
+      Element = c("Li", "Na", "Mg", "P", "S", "K", "Ca", "Mn", "Fe", "Co", "Cu", "Zn", "As", "Se", "Rb", "Sr", "Mo", "Cd"),
+      RSD = c(4.38, 33.63, 8.35, 7.52, 9.60, 9.31, 5.86, 5.33, 2.33, 23.90, 8.12, 7.01, 8.32, 13.05, 10.75, 6.38, 71.29, 9.88),
+      Heritability = c(16.58, 52.89, 26.49, 28.67, 21.17, 43.54, 25.47, 5.48, 10.49, 29.38, 16.68, 4.32, 9.98, 39.87, 28.39, 28.34, 77.14, 4.95)
+    )
+    
+    # Appeler la fonction generateGraph pour générer le graphique
+    generateGraph(correlation_data)
   })
 
   output$checkbox_elements <- renderUI({
