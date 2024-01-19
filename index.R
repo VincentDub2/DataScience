@@ -3,6 +3,7 @@ library(shinydashboard)
 library(FactoMineR)
 library(factoextra)
 library(ggplot2)
+library(reticulate)
 library(cluster)
 
 # Chemins des fichiers sur le serveur
@@ -16,6 +17,8 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("ACP", tabName = "acp", icon = icon("chart-line")),
     menuItem("ANOVA", tabName = "anova", icon = icon("balance-scale")),
+    menuItem("Étude des feuilles", tabName = "feuille", icon = icon("leaf")),
+    menuItem("Étude des graines", tabName = "graine", icon = icon("seedling")),
     menuItem("K-means Clustering", tabName = "kmeans", icon = icon("chart-pie"))
   )
 )
@@ -54,7 +57,41 @@ body <- dashboardBody(
               )
             )
     ),
-    # Troisième page : K-means Clustering
+    # Troisième page : Étude des feuilles
+    tabItem(tabName = "feuille",
+            fluidPage(
+              titlePanel("Étude des feuilles"),
+              fluidRow(
+                div(style = "margin-top: 20px;",
+                    plotOutput("plotVariability"),
+                ),
+                div(style = "margin-top: 50px;",
+                    plotOutput("plotHeritability"),
+                ),
+                div(style = "margin-top: 50px;",
+                    plotOutput("plotCorrelation"),
+                )
+              )
+            )
+    ),
+    # Quatrième page : Étude des graines
+    tabItem(tabName = "graine",
+            fluidPage(
+              titlePanel("Étude des graines"),
+              fluidRow(
+                div(style = "margin-top: 20px;",
+                    plotOutput("plotVariabilitySeed"),
+                ),
+                div(style = "margin-top: 50px;",
+                    plotOutput("plotHeritabilitySeed"),
+                ),
+                div(style = "margin-top: 50px;",
+                    plotOutput("plotCorrelationSeed"),
+                )
+              )
+            )
+    ),
+    # Cinquième page : K-means Clustering
     tabItem(tabName = "kmeans",
             fluidPage(
               titlePanel("K-means Clustering"),
@@ -74,7 +111,6 @@ body <- dashboardBody(
                 )
               )
             )
-
     )
   )
 )
@@ -124,6 +160,86 @@ server <- function(input, output, session) {
     )
   })
 
+  output$plotVariability <- renderPlot({
+    source("Graphes/Leaf/Variabilite_relative_elements.R", local = TRUE)$value
+    
+    # Charger les données nécessaires pour le graphique
+    data_for_feuille <- data.frame(
+      Element = c("Li", "Mg", "P", "S", "K", "Ca", "Mn", "Fe", "Cu", "Zn", "As", "Sr", "Cd", "Co", "Se", "Rb", "Na", "Mo"),
+      RSD = c(4.38, 8.35, 7.52, 9.60, 9.31, 5.86, 5.33, 2.33, 8.12, 7.01, 8.32, 6.38, 9.88, 23.90, 13.05, 10.75, 33.63, 71.29),
+      RSD_Category = c(rep("Faible", 13), rep("Modéré", 3), "Fort", "Fort")
+    )
+    
+    # Appeler la fonction generateGraph pour générer le graphique
+    generateGraph(data_for_feuille)
+  })
+  
+  output$plotHeritability <- renderPlot({
+    source("Graphes/Leaf/Heritabilite_elements.R", local = TRUE)$value
+    
+    # Données d'héritabilité
+    heritability_data <- data.frame(
+      Element = c("Li", "Na", "Mg", "P", "S", "K", "Ca", "Mn", "Fe", "Co", "Cu", "Zn", "As", "Se", "Rb", "Sr", "Mo", "Cd"),
+      Heritability = c(16.58, 52.89, 26.49, 28.67, 21.17, 43.54, 25.47, 5.48, 10.49, 29.38, 16.68, 4.32, 9.98, 39.87, 28.39, 28.34, 77.14, 4.95)
+    )
+    
+    # Appeler la fonction generateGraph pour générer le graphique
+    generateGraph(heritability_data)
+  })
+  
+  output$plotCorrelation <- renderPlot({
+    source("Graphes/Leaf/Correlation_rsd_heritability.R", local = TRUE)$value
+    
+    correlation_data <- data.frame(
+      Element = c("Li", "Na", "Mg", "P", "S", "K", "Ca", "Mn", "Fe", "Co", "Cu", "Zn", "As", "Se", "Rb", "Sr", "Mo", "Cd"),
+      RSD = c(4.38, 33.63, 8.35, 7.52, 9.60, 9.31, 5.86, 5.33, 2.33, 23.90, 8.12, 7.01, 8.32, 13.05, 10.75, 6.38, 71.29, 9.88),
+      Heritability = c(16.58, 52.89, 26.49, 28.67, 21.17, 43.54, 25.47, 5.48, 10.49, 29.38, 16.68, 4.32, 9.98, 39.87, 28.39, 28.34, 77.14, 4.95)
+    )
+    
+    # Appeler la fonction generateGraph pour générer le graphique
+    generateGraph(correlation_data)
+  })
+  
+  output$plotVariabilitySeed <- renderPlot({
+    source("Graphes/Seed/Variabilite_relative_elements.R", local = TRUE)$value
+    
+    # Charger les données nécessaires pour le graphique
+    data <- data.frame(
+      Element = c("Li", "Mg", "P", "S", "K", "Ca", "Mn", "Fe", "Cu", "Zn", "As", "Sr", "Cd", "Co", "Se", "Rb", "Na", "Mo"),
+      RSD = c(25.42, 66.74, 6.82, 3.47, 10.27, 9.79, 7.86, 22.33, 4.34, 13.97, 8.47, 13.24, 11.06, 71.84, 10.99, 17.84, 39.48, 87.28),
+      RSD_Category = c(rep("Faible", 13), rep("Modéré", 3), "Fort", "Fort")
+    )
+    
+    # Appeler la fonction generateGraph pour générer le graphique
+    generateGraph(data)
+  })
+  
+  output$plotHeritabilitySeed <- renderPlot({
+    source("Graphes/Seed/Heritabilite_elements.R", local = TRUE)$value
+    
+    # Données d'héritabilité
+    heritability_data <- data.frame(
+      Element = c("Li", "Na", "Mg", "P", "S", "K", "Ca", "Mn", "Fe", "Co", "Cu", "Zn", "As", "Se", "Rb", "Sr", "Mo", "Cd"),
+      Heritability = c(29.77, 18.36, 26.09, 11.33, 9.39, 26.31, 20.41, 32.92, 6.26, 3.94, 16.45, 6.42, 17.66, 36.31, 24.96, 29.94, 34.37, 33.94)
+    )
+    
+    # Appeler la fonction generateGraph pour générer le graphique
+    generateGraph(heritability_data)
+  })
+  
+  output$plotCorrelationSeed <- renderPlot({
+    source("Graphes/Seed/Correlation_rsd_heritability.R", local = TRUE)$value
+    
+    correlation_data <- data.frame(
+      Element = c("Li", "Na", "Mg", "P", "S", "K", "Ca", "Mn", "Fe", "Co", "Cu", "Zn", "As", "Se", "Rb", "Sr", "Mo", "Cd"),
+      RSD = c(25.42, 66.74, 6.82, 3.47, 10.27, 9.79, 7.86, 22.33, 4.34, 13.97, 8.47, 13.24, 11.06, 71.84, 10.99, 17.84, 39.48, 87.28),
+      Heritability = c(29.77, 18.36, 26.09, 11.33, 9.39, 26.31, 20.41, 32.92, 6.26, 3.94, 16.45, 6.42, 17.66, 36.31, 24.96, 29.94, 34.37, 33.94)
+    )
+    
+    # Appeler la fonction generateGraph pour générer le graphique
+    generateGraph(correlation_data)
+  })
+  
   output$checkbox_elements <- renderUI({
     data <- read.csv(chemin_fichier_combine)
     elements <- setdiff(names(data), c("ID", "TYPE"))
